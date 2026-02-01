@@ -1,0 +1,394 @@
+/* =====================================================
+   🔧 RESET
+===================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* =====================================================
+   🎨 VARIABLES
+===================================================== */
+:root {
+  --red: #dc2626;
+  --red-dark: #7f1d1d;
+  --dark: #111827;
+  --gray: #374151;
+  --light: #f8fafc;
+  --green: #16a34a;
+}
+
+/* =====================================================
+   🏁 BODY GENERAL
+===================================================== */
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--dark);
+  min-height: 100vh;
+  background:
+    linear-gradient(120deg, transparent 72%, rgba(220,38,38,0.1) 72%),
+    repeating-linear-gradient(
+      135deg,
+      #f1f5f9,
+      #f1f5f9 16px,
+      #e5e7eb 16px,
+      #e5e7eb 32px
+    );
+  animation: roadMove 22s linear infinite;
+}
+
+@keyframes roadMove {
+  from { background-position: 0 0; }
+  to { background-position: 400px 400px; }
+}
+
+/* =====================================================
+   📐 LAYOUT
+===================================================== */
+body:not(:has(.tabla)) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 90px;
+}
+
+body:has(.tabla) {
+  padding: 120px 20px 40px;
+}
+
+/* =====================================================
+   🏍️ HEADER EMPRESA
+===================================================== */
+header.empresa,
+header.empresa-top {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 34px;
+  border-radius: 22px;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  background: linear-gradient(135deg, #111827, #1f2937);
+  color: white;
+  z-index: 50;
+  box-shadow: 0 14px 30px rgba(0,0,0,.4);
+}
+
+/* =====================================================
+   🧱 CONTENEDORES
+===================================================== */
+.container,
+.login-container {
+  position: relative;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: 22px;
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 22px 45px rgba(0,0,0,.15);
+}
+
+.container {
+  padding: 28px;
+  width: 380px;
+}
+
+.container::before,
+.login-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 5px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--red), var(--red-dark));
+  border-radius: 22px 22px 0 0;
+}
+
+.container.tabla {
+  width: 100%;
+  max-width: 1200px;
+  overflow-x: auto;
+  margin: 0 auto;
+}
+
+/* =====================================================
+   🏷️ TITULOS
+===================================================== */
+h2 {
+  margin-bottom: 18px;
+  font-size: 22px;
+  text-align: center;
+  letter-spacing: .4px;
+}
+
+/* =====================================================
+   ⚙️ INPUTS (MAS COMPACTOS)
+===================================================== */
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 6px 0;
+  border-radius: 14px;
+  border: 1.8px solid #d1d5db;
+  font-size: 14px;
+  background: #f9fafb;
+}
+
+input:focus, select:focus {
+  border-color: var(--red);
+  outline: none;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(220,38,38,.12);
+}
+
+/* =====================================================
+   🏁 BOTONES
+===================================================== */
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 16px;
+  border: none;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: .9px;
+  position: relative;
+  overflow: hidden;
+  transition: .2s;
+}
+
+button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,.35),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: .4s;
+}
+
+button:hover::after {
+  transform: translateX(100%);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0,0,0,.3);
+}
+
+button:active {
+  transform: scale(.96);
+}
+
+button.buscar,
+button.guardar {
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
+  color: white;
+}
+
+button.volver {
+  background: linear-gradient(135deg, var(--gray), #1f2937);
+  color: white;
+}
+
+/* =====================================================
+   📊 RESUMEN DIARIO (MISMO ESTILO MOTOS REGISTRADAS)
+===================================================== */
+.resumen-diario {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 24px 0 32px;
+  flex-wrap: wrap;
+}
+
+/* BASE IGUAL A TOTAL MOTOS */
+.resumen-card {
+  width: 220px;
+  padding: 18px;
+  border-radius: 18px;
+  background: white;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  border: 2px solid rgba(0,0,0,.12);
+  box-shadow: 0 12px 25px rgba(0,0,0,.12);
+}
+
+/* TITULO */
+.resumen-card h3 {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  margin-bottom: 6px;
+}
+
+/* NUMERO */
+.resumen-card span {
+  display: block;
+  font-size: 34px;
+  font-weight: 900;
+  margin-top: 6px;
+}
+
+/* PAGARON */
+.resumen-card.pagaron {
+  border-color: rgba(22,163,74,.35);
+}
+
+.resumen-card.pagaron h3 {
+  color: #065f46;
+}
+
+.resumen-card.pagaron span {
+  color: var(--green);
+  text-shadow: 0 0 10px rgba(22,163,74,.35);
+}
+
+/* NO PAGARON */
+.resumen-card.no-pagaron {
+  border-color: rgba(220,38,38,.35);
+}
+
+.resumen-card.no-pagaron h3 {
+  color: var(--red-dark);
+}
+
+.resumen-card.no-pagaron span {
+  color: var(--red);
+  text-shadow: 0 0 10px rgba(220,38,38,.35);
+}
+
+/* =====================================================
+   📋 TABLAS
+===================================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  min-width: 700px;
+}
+
+th, td {
+  padding: 11px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  background: #111827;
+  color: white;
+}
+
+/* =====================================================
+   🔢 TOTAL MOTOS
+===================================================== */
+#totalMotos,
+.total-motos,
+.total {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: white;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  border: 2px solid rgba(220,38,38,.25);
+  box-shadow: 0 12px 25px rgba(0,0,0,.12);
+}
+
+#totalMotos span {
+  display: block;
+  font-size: 32px;
+  color: var(--red);
+  margin-top: 4px;
+  text-shadow: 0 0 10px rgba(220,38,38,.4);
+}
+
+/* =====================================================
+   📱 RESPONSIVE
+===================================================== */
+@media (max-width: 600px) {
+  .container,
+  .login-container {
+    width: 100%;
+  }
+
+  .resumen-card {
+    width: 160px;
+  }
+
+  .resumen-card span {
+    font-size: 28px;
+  }
+}
+/* =====================================================
+   🏍️ RESUMEN DIARIO – ESTILO TOTAL (MOTO PRO)
+===================================================== */
+
+.resumen-diario {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 28px 0 32px;
+  flex-wrap: wrap;
+}
+
+.total.pagaron,
+.total.no-pagaron {
+  min-width: 220px;
+  padding: 18px;
+  border-radius: 20px;
+  background: white;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 800;
+  border: 2px solid rgba(0,0,0,.08);
+  box-shadow: 0 14px 32px rgba(0,0,0,.14);
+  position: relative;
+}
+
+/* número */
+.total.pagaron span,
+.total.no-pagaron span {
+  display: block;
+  font-size: 38px;
+  margin-top: 6px;
+  font-weight: 900;
+}
+
+/* ===== PAGARON ===== */
+.total.pagaron {
+  border-color: rgba(22,163,74,.35);
+}
+
+.total.pagaron span {
+  color: #16a34a;
+  text-shadow: 0 0 10px rgba(22,163,74,.45);
+}
+
+/* ===== NO PAGARON ===== */
+.total.no-pagaron {
+  border-color: rgba(220,38,38,.4);
+}
+
+.total.no-pagaron span {
+  color: var(--red);
+  text-shadow: 0 0 10px rgba(220,38,38,.45);
+}
+
+/* === AJUSTE EXACTO TAMAÑO LOGIN (NO TOCAR LO DEMÁS) === */
+.login-container,
+.container {
+  width: 400px;
+  max-width: 400px;
+}

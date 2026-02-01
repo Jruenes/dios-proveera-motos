@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Historial por Moto</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container tabla">
+    <h2>Historial de Pagos por Moto</h2>
+
+    <input id="placa" placeholder="Placa de la moto">
+
+    <button class="buscar" id="btnBuscar">Buscar</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Monto</th>
+                <th>Empleado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+
+    <p class="total" id="total"></p>
+
+    <button class="volver" onclick="window.location.href='dashboard.html'">
+        Volver
+    </button>
+</div>
+
+<script type="module" src="historial_moto.js"></script>
+</body>
+</html>

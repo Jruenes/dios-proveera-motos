@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registrar Moto</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h2>Registrar Moto</h2>
+
+    <input type="text" id="placa" placeholder="Placa">
+    <input type="text" id="nombre" placeholder="Nombre completo del propietario">
+    <input type="text" id="cedula" placeholder="Cédula">
+    <input type="text" id="direccion" placeholder="Dirección">
+    <input type="text" id="telefono" placeholder="Teléfono">
+
+    <!-- ===== CODEUDOR ===== -->
+    <hr>
+    <label>
+        <input type="checkbox" id="tieneCodeudor">
+        ¿Tiene codeudor?
+    </label>
+
+    <div id="formCodeudor" style="display:none; margin-top:15px;">
+        <h3>Datos del Codeudor</h3>
+        <input type="text" id="codeudorNombre" placeholder="Nombre del codeudor">
+        <input type="text" id="codeudorCedula" placeholder="Cédula del codeudor">
+        <input type="text" id="codeudorDireccion" placeholder="Dirección del codeudor">
+        <input type="text" id="codeudorTelefono" placeholder="Teléfono del codeudor">
+    </div>
+
+    <button id="btnRegistrar">Registrar Moto</button>
+    <p id="mensaje"></p>
+    <button class="volver" onclick="window.location.href='dashboard.html'">Volver</button>
+</div>
+
+<script type="module" src="motos.js"></script>
+</body>
+</html>

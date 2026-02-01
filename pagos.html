@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registrar Pago</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Registrar Pago</h2>
+
+    <input id="placa" placeholder="Placa" required>
+
+    <input type="number" id="monto" placeholder="Monto" required>
+
+    <input type="date" id="fecha" required>
+
+    <button class="guardar" id="btnPago">
+        Registrar pago
+    </button>
+
+    <p id="mensaje"></p>
+
+    <button class="volver" onclick="window.location.href='dashboard.html'">
+        Volver
+    </button>
+</div>
+
+<script type="module" src="pagos.js"></script>
+</body>
+</html>

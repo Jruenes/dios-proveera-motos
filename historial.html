@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Historial de Pagos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Historial de Pagos</h2>
+
+    <input type="text" id="placa" placeholder="Buscar por placa">
+    <button onclick="buscarHistorial()">Buscar</button>
+    <table id="tabla_historial">
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Nombre</th>
+                <th>Fecha</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <button class="volver" onclick="volver()">Volver</button>
+</div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+const rol = localStorage.getItem("rol_actual");
+
+async function buscarHistorial() {
+    const placa = document.getElementById("placa").value.trim().toUpperCase();
+    const tbody = document.querySelector("#tabla_historial tbody");
+    tbody.innerHTML = "";
+
+    let query = supabase.from('historial_vista').select('*');
+
+    if (placa) query = query.eq('placa', placa);
+
+    if (rol === "empleado") {
+        const usuario_id = localStorage.getItem("usuario_id");
+        query = query.eq('usuario_id', usuario_id); // empleado ve solo sus registros
+    }
+
+    const { data, error } = await query.order('fecha', { ascending: false });
+
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="4">Error: ${error.message}</td></tr>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4">No hay registros</td></tr>`;
+        return;
+    }
+
+    data.forEach(r => {
+        tbody.innerHTML += `<tr>
+            <td>${r.placa}</td>
+            <td>${r.nombre}</td>
+            <td>${r.fecha}</td>
+            <td>${r.monto}</td>
+        </tr>`;
+    });
+}
+
+function volver() {
+    window.location.href = "dashboard.html";
+}
+
+window.buscarHistorial = buscarHistorial;
+window.volver = volver;
+</script>
+
+</body>
+</html>

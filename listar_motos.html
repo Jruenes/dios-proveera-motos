@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registrar Pago</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Registrar Pago</h2>
+
+    <input type="text" id="placa" placeholder="Placa de la moto">
+    <input type="date" id="fecha">
+    <input type="number" id="monto" placeholder="Monto del pago">
+
+    <button onclick="guardarPago()">Guardar Pago</button>
+    <p id="mensaje"></p>
+
+    <button onclick="volver()">Volver</button>
+</div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+
+async function guardarPago() {
+    const placa = document.getElementById("placa").value.trim().toUpperCase();
+    const fecha = document.getElementById("fecha").value;
+    const monto = parseInt(document.getElementById("monto").value);
+    const mensaje = document.getElementById("mensaje");
+
+    mensaje.textContent = "";
+    mensaje.style.color = "red";
+
+    if (!placa || !fecha || isNaN(monto) || monto <= 0) {
+        mensaje.textContent = "Complete correctamente los datos";
+        return;
+    }
+
+    const { data: moto } = await supabase.from("motos").select("id").eq("placa", placa).single();
+    if (!moto) {
+        mensaje.textContent = "La moto no existe";
+        return;
+    }
+
+    const { data: existe } = await supabase.from("pagos")
+        .select("id")
+        .eq("moto_id", moto.id)
+        .eq("fecha", fecha);
+
+    if (existe.length > 0) {
+        mensaje.textContent = "Ya existe un pago en esa fecha";
+        return;
+    }
+
+    const usuario_id = Number(localStorage.getItem("usuario_id"));
+
+    const { error } = await supabase.from("pagos").insert([{
+        moto_id: moto.id, fecha, monto, usuario_id
+    }]);
+
+    if (error) {
+        mensaje.textContent = "Error al guardar el pago: " + error.message;
+        return;
+    }
+
+    mensaje.style.color = "lime";
+    mensaje.textContent = `Pago guardado: $${monto.toLocaleString("es-CO")}`;
+
+    document.querySelectorAll('input').forEach(i => i.value = "");
+}
+
+// Enter guarda
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') guardarPago();
+    });
+});
+
+function volver() {
+    window.location.href = "dashboard.html";
+}
+
+window.guardarPago = guardarPago;
+window.volver = volver;
+</script>
+
+</body>
+</html>

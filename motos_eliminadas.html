@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Buscar Moto</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h2>Buscar Moto</h2>
+
+    <input type="text" id="busqueda" placeholder="Ingrese placa, nombre o cédula">
+    <button onclick="buscarMoto()">Buscar</button>
+
+    <table id="resultado" border="1" style="margin-top: 10px; display:none;">
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Nombre</th>
+                <th>Cédula</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Registrado por</th>
+                <th>Modificar</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <button onclick="volver()">Volver</button>
+</div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+
+const rolActual = localStorage.getItem("rol_actual");
+const usuarioActual = localStorage.getItem("usuario_actual");
+
+async function buscarMoto() {
+    const busqueda = document.getElementById("busqueda").value.trim();
+    const tabla = document.getElementById("resultado");
+    const tbody = tabla.querySelector('tbody');
+    tbody.innerHTML = "";
+
+    if (!busqueda) return;
+
+    let query = supabase.from('motos').select(`id,placa,nombre,cedula,direccion,telefono,usuario_id`);
+
+    // Para empleados: solo mostrar sus motos
+    if (rolActual === "empleado") {
+        const { data: usuario } = await supabase.from('usuarios')
+            .select('id')
+            .eq('usuario', usuarioActual)
+            .single();
+        query = query.eq('usuario_id', usuario.id);
+    }
+
+    query = query.or(`placa.ilike.%${busqueda}%,nombre.ilike.%${busqueda}%,cedula.ilike.%${busqueda}%`);
+
+    const { data, error } = await query;
+
+    if (error) {
+        alert("Error al buscar: " + error.message);
+        return;
+    }
+
+    if (data.length === 0) {
+        alert("No se encontraron resultados");
+        tabla.style.display = "none";
+        return;
+    }
+
+    tabla.style.display = "table";
+
+    for (let moto of data) {
+        const { data: usuario } = await supabase.from('usuarios')
+            .select('usuario')
+            .eq('id', moto.usuario_id)
+            .single();
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${moto.placa}</td>
+            <td><input type="text" value="${moto.nombre}" id="nombre-${moto.id}"></td>
+            <td><input type="text" value="${moto.cedula}" id="cedula-${moto.id}"></td>
+            <td><input type="text" value="${moto.direccion}" id="direccion-${moto.id}"></td>
+            <td><input type="text" value="${moto.telefono}" id="telefono-${moto.id}"></td>
+            <td>${usuario ? usuario.usuario : 'Desconocido'}</td>
+            <td><button onclick="modificarMoto(${moto.id})">Guardar</button></td>
+            <td><button onclick="eliminarMoto(${moto.id})">Eliminar</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
+async function modificarMoto(id) {
+    const nombre = document.getElementById(`nombre-${id}`).value.trim();
+    const cedula = document.getElementById(`cedula-${id}`).value.trim();
+    const direccion = document.getElementById(`direccion-${id}`).value.trim();
+    const telefono = document.getElementById(`telefono-${id}`).value.trim();
+
+    const { error } = await supabase.from('motos')
+        .update({ nombre, cedula, direccion, telefono })
+        .eq('id', id);
+
+    if (error) {
+        alert("Error al modificar: " + error.message);
+        return;
+    }
+
+    alert("Datos actualizados correctamente");
+}
+
+async function eliminarMoto(id) {
+    const confirmar = confirm("¿Seguro que quieres eliminar esta moto?");
+    if (!confirmar) return;
+
+    // Traer datos de la moto antes de eliminar
+    const { data: moto, error: motoError } = await supabase.from('motos')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (motoError || !moto) {
+        alert("No se encontró la moto");
+        return;
+    }
+
+    // Traer id del usuario que elimina
+    const { data: usuario } = await supabase.from('usuarios')
+        .select('id, usuario')
+        .eq('usuario', usuarioActual)
+        .single();
+
+    if (!usuario) {
+        alert("No se encontró el usuario que elimina");
+        return;
+    }
+
+    // Insertar en motos_eliminadas
+    const { error: elimError } = await supabase.from('motos_eliminadas').insert([{
+        placa: moto.placa,
+        nombre: moto.nombre,
+        cedula: moto.cedula,
+        direccion: moto.direccion,
+        telefono: moto.telefono,
+        usuario_id: moto.usuario_id,
+        eliminado_por: usuario.usuario,
+        fecha_eliminacion: new Date()
+    }]);
+
+    if (elimError) {
+        alert("Error al registrar la eliminación: " + elimError.message);
+        return;
+    }
+
+    // Eliminar la moto de la tabla principal
+    const { error: delError } = await supabase.from('motos')
+        .delete()
+        .eq('id', id);
+
+    if (delError) {
+        alert("Error al eliminar la moto: " + delError.message);
+        return;
+    }
+
+    alert("Moto eliminada correctamente");
+    buscarMoto();
+}
+
+function volver() {
+    window.location.href = "dashboard.html";
+}
+
+window.buscarMoto = buscarMoto;
+window.modificarMoto = modificarMoto;
+window.eliminarMoto = eliminarMoto;
+window.volver = volver;
+</script>
+</body>
+</html>

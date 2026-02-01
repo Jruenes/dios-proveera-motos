@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Diario</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container tabla">
+    <h2>Reporte Diario</h2>
+
+    <input type="date" id="fecha">
+
+    <select id="usuarioFiltro" style="display:none;">
+        <option value="">Todos los empleados</option>
+    </select>
+
+    <button class="buscar" id="btnBuscar">Buscar</button>
+
+    <div class="resumen-diario">
+    <div class="total pagaron">
+        Pagaron hoy
+        <span id="pagaronHoy">0</span>
+    </div>
+
+    <div class="total no-pagaron">
+        No pagaron hoy
+        <span id="noPagaronHoy">0</span>
+    </div>
+</div>
+
+
+    <table>
+        <thead>
+            <tr>
+                <th>Empleado</th>
+                <th>Placa</th>
+                <th>Propietario</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>🖨</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+
+    <p class="total">
+        Total del día: <span id="totalDia">$0</span>
+    </p>
+
+    <!-- ===== MOTOS SIN PAGO ===== -->
+    <h3 style="margin-top:40px;">Motos sin pago registrado hoy</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Propietario</th>
+                <th>Empleado</th>
+            </tr>
+        </thead>
+        <tbody id="tablaNoPagaronBody">
+            <tr>
+                <td colspan="3" style="text-align:center; padding:15px;">
+                    Selecciona una fecha
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button class="guardar" id="btnImprimirTotal">🖨 Imprimir total del día</button>
+
+    <button class="volver" onclick="window.location.href='dashboard.html'">Volver</button>
+</div>
+
+<script type="module" src="reporte_diario.js"></script>
+</body>
+</html>

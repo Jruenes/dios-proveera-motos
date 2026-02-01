@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte Mensual</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<script type="module" src="auth_guard.js"></script>
+
+<div class="container tabla">
+    <h2>Reporte Mensual</h2>
+
+    <input type="month" id="mes">
+
+    <select id="usuarioFiltro" style="display:none;">
+        <option value="">Todos los empleados</option>
+    </select>
+
+    <button id="btnBuscar" class="buscar">Buscar</button>
+
+    <div id="mensaje"></div>
+
+    <table id="tablaReporte">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Empleado</th>
+                <th>Placa</th>
+                <th>Monto</th>
+                <th>Imprimir</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <p id="total" class="total"></p>
+
+    <button id="btnImprimirMes" class="guardar">
+        🖨 Imprimir total del mes
+    </button>
+
+    <button class="volver" onclick="window.location.href='dashboard.html'">
+        Volver
+    </button>
+</div>
+
+<script type="module" src="reporte_mensual.js"></script>
+</body>
+</html>

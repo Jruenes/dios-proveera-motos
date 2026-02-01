@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gestionar Empleados</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container tabla">
+    <h2>Gestionar Empleados</h2>
+
+    <!-- FORMULARIO -->
+    <input type="text" id="nombre" placeholder="Nombre completo">
+    <input type="text" id="usuario" placeholder="Usuario (email para Auth)">
+    <input type="password" id="password" placeholder="Contraseña">
+    
+    <select id="rol">
+        <option value="">Seleccione rol</option>
+        <option value="empleado">Empleado</option>
+        <option value="administrador">Administrador</option>
+    </select>
+
+    <button class="guardar" id="btnGuardar">Guardar</button>
+
+    <p id="mensaje"></p>
+
+    <!-- TABLA DE USUARIOS -->
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Contraseña</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tablaUsuarios"></tbody>
+    </table>
+
+    <button class="volver" onclick="window.location.href='dashboard.html'">Volver</button>
+</div>
+
+<script type="module" src="empleados.js"></script>
+</body>
+</html>

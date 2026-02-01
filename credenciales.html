@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cambiar Credenciales</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Cambiar Credenciales</h2>
+
+    <input type="text" id="nuevoUsuario" placeholder="Nuevo usuario">
+    <input type="password" id="nuevaClave" placeholder="Nueva contraseña">
+
+    <button class="guardar" id="btnGuardar">Guardar cambios</button>
+
+    <p id="mensaje"></p>
+
+    <button class="volver" id="btnVolver">Volver</button>
+</div>
+
+<script type="module">
+import { supabase } from './supabase.js';
+
+const btnGuardar = document.getElementById("btnGuardar");
+const btnVolver = document.getElementById("btnVolver");
+const mensaje = document.getElementById("mensaje");
+
+async function guardarCredenciales() {
+    const nuevoUsuario = document.getElementById("nuevoUsuario").value.trim();
+    const nuevaClave = document.getElementById("nuevaClave").value.trim();
+
+    mensaje.textContent = "";
+    mensaje.style.color = "red";
+
+    if (!nuevoUsuario || !nuevaClave) {
+        mensaje.textContent = "Complete todos los campos";
+        return;
+    }
+
+    const usuarioId = localStorage.getItem("usuario_id");
+
+    if (!usuarioId) {
+        mensaje.textContent = "Sesión no válida. Inicie sesión nuevamente.";
+        return;
+    }
+
+    const { error } = await supabase
+        .from("usuarios")
+        .update({
+            usuario: nuevoUsuario,
+            password: nuevaClave
+        })
+        .eq("id", usuarioId);
+
+    if (error) {
+        console.error(error);
+        mensaje.textContent = "Error al actualizar credenciales: " + error.message;
+        return;
+    }
+
+    localStorage.setItem("usuario_actual", nuevoUsuario);
+
+    mensaje.style.color = "lime";
+    mensaje.textContent = "✅ Credenciales actualizadas correctamente";
+}
+
+function volver() {
+    if (localStorage.getItem("sesionActiva") === "true") {
+        window.location.href = "dashboard.html";
+    } else {
+        window.location.href = "index.html";
+    }
+}
+
+// Eventos
+btnGuardar.addEventListener("click", guardarCredenciales);
+btnVolver.addEventListener("click", volver);
+
+// Enter guarda credenciales
+document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter") guardarCredenciales();
+    });
+});
+
+// Protección básica: si no hay sesión, redirige
+if (localStorage.getItem("sesionActiva") !== "true") {
+    window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Buscar Moto</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container tabla">
+    <h2>Buscar motos</h2>
+
+    <div class="filtros">
+        <input type="text" id="placa" placeholder="Buscar por placa o nombre">
+
+        <select id="usuarioFiltro" style="display:none;">
+            <option value="">Seleccionar empleado</option>
+        </select>
+
+        <button id="btnBuscar" class="buscar">Buscar</button>
+    </div>
+
+    <!-- ===== CONTADOR MOTOS ===== -->
+    <div class="resumen-diario">
+        <div class="resumen-card">
+            <h3>MOTOS REGISTRADAS</h3>
+            <span id="totalMotos">0</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Placa</th>
+                <th>Propietario</th>
+                <th>Cédula</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Empleado</th>
+                <th>Codeudor</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+
+    <button class="volver" onclick="window.location.href='dashboard.html'">
+        Volver
+    </button>
+</div>
+
+<script type="module" src="buscar_moto.js"></script>
+</body>
+</html>

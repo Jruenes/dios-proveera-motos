@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Dios Proveera - Motos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="empresa">
+    🏍️ Dios Proveera - Motos
+  </header>
+
+  <div class="container dashboard-grid">
+
+    <h2>Panel Principal</h2>
+
+    <button id="menu_gestionar_empleados" onclick="window.location.href='empleados.html'">
+      👥 Gestionar Empleados
+    </button>
+
+    <button id="menu_registrar_moto" onclick="window.location.href='motos.html'">
+      🏍️ Registrar Moto
+    </button>
+
+    <button id="menu_registrar_pago" onclick="window.location.href='pagos.html'">
+      💰 Registrar Pago
+    </button>
+
+    <button onclick="window.location.href='buscar_moto.html'">
+      🔍 Buscar Moto
+    </button>
+
+    <button onclick="window.location.href='historial_moto.html'">
+      📄 Historial por Moto
+    </button>
+
+    <button onclick="window.location.href='reporte_diario.html'">
+      📊 Reporte Diario
+    </button>
+
+    <button id="menu_reporte_mensual" onclick="window.location.href='reporte_mensual.html'">
+      📈 Reporte Mensual
+    </button>
+
+    <button class="volver" onclick="cerrarSesion()">
+      🚪 Cerrar Sesión
+    </button>
+
+  </div>
+
+  <script>
+    if (!localStorage.getItem("usuario_id")) {
+      window.location.href = "index.html";
+    }
+
+    const rolActual = localStorage.getItem("rol_actual");
+
+    if (rolActual === "administrador") {
+      document.getElementById("menu_registrar_moto").style.display = "none";
+      document.getElementById("menu_registrar_pago").style.display = "none";
+    }
+
+    if (rolActual === "empleado") {
+      document.getElementById("menu_gestionar_empleados").style.display = "none";
+      document.getElementById("menu_reporte_mensual").style.display = "none";
+    }
+
+    function cerrarSesion() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+  </script>
+
+</body>
+</html>

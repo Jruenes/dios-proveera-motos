@@ -249,12 +249,20 @@ function formatoCOP(valor) {
     });
 }
 
+/*
+    fecha_pago viene de Supabase como DATE (YYYY-MM-DD)
+    NO se debe convertir con Date() porque resta un día
+*/
 function fechaSolo(fecha) {
-    return new Date(fecha).toLocaleDateString("es-CO", {
-        timeZone: "America/Bogota"
-    });
+    if (!fecha) return "";
+    const [yyyy, mm, dd] = fecha.split("-");
+    return `${dd}/${mm}/${yyyy}`;
 }
 
+/*
+    created_at viene como TIMESTAMP (ISO)
+    Aquí SÍ es correcto aplicar zona horaria
+*/
 function fechaHoraCOL(fecha) {
     return new Date(fecha).toLocaleString("es-CO", {
         timeZone: "America/Bogota",

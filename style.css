@@ -408,3 +408,36 @@ th {
 }
 
 
+/* ===== BOTON ELIMINAR (ADMIN) ===== */
+.btn-eliminar {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.btn-eliminar:hover {
+  background: #b91c1c;
+  transform: scale(1.05);
+}
+
+/* ===== ELIMINAR PAGO (SOLO ADMIN) ===== */
+.btnEliminarPago {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.btnEliminarPago:hover {
+  background: #b91c1c;
+  transform: scale(1.05);
+}

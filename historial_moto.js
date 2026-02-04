@@ -12,10 +12,16 @@ const usuarioId = localStorage.getItem("usuario_id");
 const btnBuscar = document.getElementById("btnBuscar");
 const tabla = document.getElementById("tabla");
 const totalTxt = document.getElementById("total");
+const thEliminar = document.getElementById("thEliminar");
 
 /* ================= VARIABLES ================= */
 let pagosGlobal = [];
 let fichaMoto = null;
+
+/* ================= MOSTRAR COLUMNA ELIMINAR SOLO ADMIN ================= */
+if (rol === "administrador") {
+    thEliminar.style.display = "table-cell";
+}
 
 /* ================= ENTER ================= */
 document.addEventListener("keydown", e => {
@@ -56,12 +62,12 @@ btnBuscar.addEventListener("click", async () => {
 
     if (error) {
         console.error(error);
-        tabla.innerHTML = `<tr><td colspan="4">❌ Error al consultar</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="5">❌ Error al consultar</td></tr>`;
         return;
     }
 
     if (!data || data.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="4">No hay pagos registrados</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="5">No hay pagos registrados</td></tr>`;
         return;
     }
 
@@ -72,39 +78,129 @@ btnBuscar.addEventListener("click", async () => {
         propietario: data[0].propietario
     };
 
-    let total = 0;
+    pintarTablaPagos();
+    pintarTotal();
+    enlazarBotonesImprimir();
+    enlazarBotonesEliminar();
+});
+
+/* ================= PINTAR TABLA ================= */
+function pintarTablaPagos() {
+    tabla.innerHTML = "";
 
     pagosGlobal.forEach(p => {
-        total += Number(p.monto);
-
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
             <td>${fechaSolo(p.fecha_pago)}</td>
             <td>${formatoCOP(p.monto)}</td>
             <td>${p.empleado}</td>
-            <td>
+            <td style="text-align:center;">
                 <button class="btnImprimir" data-id="${p.pago_id}">🖨️</button>
             </td>
+
+            ${
+                rol === "administrador"
+                    ? `<td style="text-align:center;">
+                        <button class="btnEliminarPago" data-id="${p.pago_id}">🗑️</button>
+                       </td>`
+                    : ``
+            }
         `;
+
         tabla.appendChild(tr);
     });
+}
+
+/* ================= TOTAL ================= */
+function pintarTotal() {
+    let total = pagosGlobal.reduce((s, p) => s + Number(p.monto), 0);
 
     totalTxt.innerHTML = `
         💰 Total pagado: <strong>${formatoCOP(total)}</strong><br><br>
         <button id="btnImprimirTotal">🖨️ Imprimir total</button>
     `;
 
+    document
+        .getElementById("btnImprimirTotal")
+        .addEventListener("click", imprimirResumen);
+}
+
+/* ================= ENLAZAR IMPRIMIR ================= */
+function enlazarBotonesImprimir() {
     document.querySelectorAll(".btnImprimir").forEach(btn => {
         btn.addEventListener("click", () => {
             const pago = pagosGlobal.find(p => p.pago_id === btn.dataset.id);
             imprimirPago(pago);
         });
     });
+}
 
-    document
-        .getElementById("btnImprimirTotal")
-        .addEventListener("click", imprimirResumen);
-});
+/* ================= VALIDAR CLAVE ADMIN EN SUPABASE ================= */
+async function validarClaveAdmin(clave) {
+    const { data, error } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("rol", "administrador")
+        .eq("password", clave)
+        .eq("activo", true)
+        .eq("eliminado", false)
+        .limit(1);
+
+    if (error) {
+        console.error(error);
+        return false;
+    }
+
+    return data && data.length > 0;
+}
+
+/* ================= ELIMINAR PAGO (SOLO ADMIN) ================= */
+function enlazarBotonesEliminar() {
+    if (rol !== "administrador") return;
+
+    document.querySelectorAll(".btnEliminarPago").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const pagoId = btn.dataset.id;
+
+            const ok = confirm("⚠️ ¿Seguro que deseas eliminar este pago?");
+            if (!ok) return;
+
+            const clave = prompt("🔑 Ingresa la clave del administrador:");
+            if (!clave) return;
+
+            // validar contra tabla usuarios
+            const esAdmin = await validarClaveAdmin(clave);
+            if (!esAdmin) {
+                alert("❌ Clave incorrecta o no eres administrador");
+                return;
+            }
+
+            // eliminar pago
+            const { error } = await supabase
+                .from("pagos")
+                .delete()
+                .eq("id", pagoId);
+
+            if (error) {
+                console.error(error);
+                alert("❌ Error eliminando el pago");
+                return;
+            }
+
+            alert("✅ Pago eliminado");
+
+            // quitar del array
+            pagosGlobal = pagosGlobal.filter(p => p.pago_id !== pagoId);
+
+            // repintar
+            pintarTablaPagos();
+            pintarTotal();
+            enlazarBotonesImprimir();
+            enlazarBotonesEliminar();
+        });
+    });
+}
 
 /* ================= IMPRIMIR PAGO ================= */
 function imprimirPago(p) {
@@ -191,14 +287,8 @@ function imprimirHTML(html) {
         <html>
         <head>
             <style>
-                @page {
-                    size: 80mm auto;
-                    margin: 0;
-                }
-
-                * {
-                    box-sizing: border-box;
-                }
+                @page { size: 80mm auto; margin: 0; }
+                * { box-sizing: border-box; }
 
                 body {
                     font-family: Arial, sans-serif;
@@ -290,4 +380,3 @@ function fechaHoraCOL(fecha) {
         timeStyle: "medium"
     });
 }
-

@@ -10,11 +10,17 @@ const usuarioFiltro = document.getElementById("usuarioFiltro");
 const btnBuscar = document.getElementById("btnBuscar");
 const tabla = document.getElementById("tabla");
 const totalMotosTxt = document.getElementById("totalMotos");
+const thEliminar = document.getElementById("thEliminar");
 
 const rol = localStorage.getItem("rol_actual");
 const usuarioId = localStorage.getItem("usuario_id");
 
 let motosCache = [];
+
+/* ===== MOSTRAR TH ELIMINAR SOLO ADMIN ===== */
+if (rol === "administrador" && thEliminar) {
+    thEliminar.style.display = "";
+}
 
 /* ===== ADMIN ===== */
 if (rol === "administrador") {
@@ -100,7 +106,7 @@ async function cargarMotos() {
     if (error || !data || data.length === 0) {
         tabla.innerHTML = `
             <tr>
-                <td colspan="8" style="text-align:center;">
+                <td colspan="9" style="text-align:center;">
                     😕 No se encontraron motos
                 </td>
             </tr>
@@ -135,10 +141,52 @@ function pintarTabla() {
                 <td style="text-align:center;">
                     <button onclick="imprimirFicha(${i})">🖨️</button>
                 </td>
+
+                ${rol === "administrador" ? `
+                    <td style="text-align:center;">
+                        <button class="btn-eliminar" onclick="eliminarMoto(${i})">🗑️</button>
+                    </td>
+                ` : ""}
             </tr>
         `;
     });
 }
+
+/* ===== ELIMINAR (SOLO ADMIN) ===== */
+window.eliminarMoto = async function (i) {
+    if (rol !== "administrador") return;
+
+    const m = motosCache[i];
+    if (!m) return;
+
+    const ok = confirm(`⚠️ ¿Seguro que deseas eliminar la moto ${m.placa}?\n\nEsta acción NO se puede deshacer.`);
+    if (!ok) return;
+
+    // 1) eliminar codeudores primero (por seguridad)
+    await supabase
+        .from("codeudores")
+        .delete()
+        .eq("moto_id", m.id);
+
+    // 2) eliminar moto
+    const { error } = await supabase
+        .from("motos")
+        .delete()
+        .eq("id", m.id);
+
+    if (error) {
+        alert("❌ No se pudo eliminar la moto.");
+        console.error(error);
+        return;
+    }
+
+    // 3) actualizar tabla en pantalla
+    motosCache.splice(i, 1);
+    totalMotosTxt.textContent = motosCache.length;
+    pintarTabla();
+
+    alert("✅ Moto eliminada correctamente.");
+};
 
 /* ===== FACTURA (NO TOCADA) ===== */
 window.imprimirFicha = function (i) {

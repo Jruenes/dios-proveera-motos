@@ -110,8 +110,8 @@ btnBuscar.addEventListener("click", async () => {
 function imprimirPago(p) {
     imprimirHTML(`
         <div class="factura">
-
             <h2>Dios Proveerá Moto</h2>
+
             <div class="direccion">
                 Barrio La Gloria II - Calle Los Amigos Cra 63A#13D-46<br>
                 Cartagena de Indias
@@ -135,7 +135,6 @@ function imprimirPago(p) {
                 ____________________________<br>
                 Firma
             </div>
-
         </div>
     `);
 }
@@ -153,8 +152,8 @@ function imprimirResumen() {
 
     imprimirHTML(`
         <div class="factura">
-
             <h2>Dios Proveerá Moto</h2>
+
             <div class="direccion">
                 Barrio La Gloria II - Calle Los Amigos Cra 63A#13D-46<br>
                 Cartagena de Indias
@@ -167,7 +166,7 @@ function imprimirResumen() {
 
             <table>
                 <tr>
-                    <th>Fecha del pago</th>
+                    <th>Fecha</th>
                     <th>Monto</th>
                 </tr>
                 ${filas}
@@ -181,54 +180,83 @@ function imprimirResumen() {
                 ____________________________<br>
                 Firma
             </div>
-
         </div>
     `);
 }
 
-/* ================= IMPRESIÓN BASE ================= */
+/* ================= IMPRESIÓN BASE (DIG-E200I REAL) ================= */
 function imprimirHTML(html) {
     const v = window.open("", "_blank");
     v.document.write(`
         <html>
         <head>
             <style>
-                body { font-family: Arial; padding: 30px; }
-                .factura {
-                    border: 2px solid #000;
-                    padding: 25px;
-                    max-width: 600px;
-                    margin: auto;
+                @page {
+                    size: 80mm auto;
+                    margin: 0;
                 }
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    width: 60mm;
+                }
+
+                .factura {
+                    width: 60mm;
+                    padding: 3mm;
+                }
+
                 h2 {
                     text-align: center;
-                    margin-bottom: 5px;
+                    margin: 4px 0;
+                    font-size: 14px;
                 }
+
                 .direccion {
                     text-align: center;
-                    font-size: 13px;
-                    margin-bottom: 10px;
+                    font-size: 10px;
+                    margin-bottom: 6px;
                 }
-                p { margin: 6px 0; font-size: 15px; }
-                .linea { border-top: 1px dashed #000; margin: 12px 0; }
+
+                p {
+                    margin: 3px 0;
+                    font-size: 11px;
+                    word-break: break-word;
+                }
+
+                .linea {
+                    border-top: 1px dashed #000;
+                    margin: 6px 0;
+                }
+
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 10px;
+                    font-size: 10px;
                 }
+
                 th, td {
-                    border: 1px solid #000;
-                    padding: 6px;
+                    padding: 3px;
                     text-align: center;
+                    word-break: break-word;
                 }
+
                 .valor {
-                    font-size: 18px;
+                    font-size: 15px;
                     font-weight: bold;
                     text-align: center;
                 }
+
                 .firma {
-                    margin-top: 45px;
+                    margin-top: 18px;
                     text-align: center;
+                    font-size: 10px;
                 }
             </style>
         </head>
@@ -249,20 +277,12 @@ function formatoCOP(valor) {
     });
 }
 
-/*
-    fecha_pago viene de Supabase como DATE (YYYY-MM-DD)
-    NO se debe convertir con Date() porque resta un día
-*/
 function fechaSolo(fecha) {
     if (!fecha) return "";
     const [yyyy, mm, dd] = fecha.split("-");
     return `${dd}/${mm}/${yyyy}`;
 }
 
-/*
-    created_at viene como TIMESTAMP (ISO)
-    Aquí SÍ es correcto aplicar zona horaria
-*/
 function fechaHoraCOL(fecha) {
     return new Date(fecha).toLocaleString("es-CO", {
         timeZone: "America/Bogota",
@@ -270,3 +290,4 @@ function fechaHoraCOL(fecha) {
         timeStyle: "medium"
     });
 }
+

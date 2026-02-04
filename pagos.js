@@ -119,72 +119,61 @@ btnPago.onclick = async () => {
 
 /* ===== FACTURA ===== */
 function generarFactura(d) {
+    imprimirHTML(`
+        <div class="factura">
+            <h2>Dios Proveerá Moto</h2>
+
+            <div class="direccion">
+                Barrio La Gloria II - Calle Los Amigos Cra 63A#13D-46<br>
+                Cartagena de Indias
+            </div>
+
+            <p><strong>No. Recibo:</strong> ${String(d.consecutivo).padStart(3, "0")}</p>
+            <p><strong>Placa:</strong> ${d.placa}</p>
+            <p><strong>Propietario:</strong> ${d.propietario}</p>
+
+            <div class="linea"></div>
+
+            <p><strong>Fecha a la que va el pago:</strong> ${d.fechaPago}</p>
+            <p><strong>Fecha y hora recibido:</strong> ${d.fechaHoraRecibido}</p>
+            <p><strong>Atendido por:</strong> ${d.empleado}</p>
+
+            <div class="linea"></div>
+
+            <p class="valor">${formatoCOP(d.monto)}</p>
+
+            <div class="firma">
+                ____________________________<br>
+                Firma
+            </div>
+        </div>
+    `);
+}
+
+/* ================= IMPRESIÓN BASE (DIG-E200I) ================= */
+function imprimirHTML(html) {
     const v = window.open("", "_blank");
-
     v.document.write(`
-<!DOCTYPE html>
-<html>
-<head>
-<title>Recibo</title>
-<style>
-body { font-family: Arial; padding: 30px; }
-.factura {
-    border: 2px solid #000;
-    padding: 25px;
-    max-width: 600px;
-    margin: auto;
-    position: relative;
-}
-h2 { text-align: center; margin-bottom: 5px; }
-h4 { text-align: center; margin: 0 0 15px 0; font-weight: normal; }
-.direccion { text-align: center; font-size: 13px; margin-bottom: 10px; }
-.caja {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-weight: bold;
-}
-p { margin: 6px 0; font-size: 15px; }
-.linea { border-top: 1px dashed #000; margin: 12px 0; }
-.valor { font-size: 18px; font-weight: bold; text-align: center; }
-.firma { margin-top: 45px; text-align: center; }
-</style>
-</head>
-
-<body onload="window.print(); window.close();">
-<div class="factura">
-
-<div class="caja">${d.caja}</div>
-
-<h2>Dios Proveerá Moto</h2>
-<div class="direccion">
-Barrio La Gloria II - Calle Los Amigos Cra 63A#13D-46<br>
-Cartagena de Indias
-</div>
-
-<p><strong>No. Recibo:</strong> ${String(d.consecutivo).padStart(3, "0")}</p>
-<p><strong>Placa:</strong> ${d.placa}</p>
-<p><strong>Propietario:</strong> ${d.propietario}</p>
-
-<div class="linea"></div>
-
-<p><strong>Fecha a la que va el pago:</strong> ${d.fechaPago}</p>
-<p><strong>Fecha y hora recibido:</strong> ${d.fechaHoraRecibido}</p>
-<p><strong>Atendido por:</strong> ${d.empleado}</p>
-
-<div class="linea"></div>
-
-<p class="valor">${formatoCOP(d.monto)}</p>
-
-<div class="firma">
-____________________________<br>
-Firma
-</div>
-
-</div>
-</body>
-</html>
-`);
+        <html>
+        <head>
+            <style>
+                @page { size: 80mm auto; margin: 0; }
+                * { box-sizing: border-box; }
+                body { font-family: Arial, sans-serif; margin: 0; padding: 0; width: 60mm; }
+                .factura { width: 60mm; padding: 3mm; }
+                h2 { text-align: center; margin: 4px 0; font-size: 14px; }
+                .direccion { text-align: center; font-size: 10px; margin-bottom: 6px; }
+                p { margin: 3px 0; font-size: 11px; word-break: break-word; }
+                .linea { border-top: 1px dashed #000; margin: 6px 0; }
+                .valor { font-size: 15px; font-weight: bold; text-align: center; }
+                .firma { margin-top: 18px; text-align: center; font-size: 10px; }
+            </style>
+        </head>
+        <body onload="window.print(); window.close();">
+            ${html}
+        </body>
+        </html>
+    `);
     v.document.close();
 }
 
@@ -208,3 +197,5 @@ function formatearFechaHora(fecha) {
         timeStyle: "medium"
     });
 }
+
+

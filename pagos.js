@@ -21,14 +21,16 @@ btnPago.onclick = async () => {
 
     const placa = document.getElementById("placa").value.trim().toUpperCase();
     const monto = Number(document.getElementById("monto").value);
+    const cuotas = Number(document.getElementById("cuotas").value);
     const fechaPagoDestino = document.getElementById("fecha").value;
     const usuarioId = localStorage.getItem("usuario_id");
 
-    if (!placa || !monto || !fechaPagoDestino) {
-        mensaje.textContent = "Complete todos los campos";
+    if (!placa || !monto || !fechaPagoDestino || !cuotas || cuotas < 1) {
+        mensaje.textContent = "Complete todos los campos correctamente";
         return;
     }
 
+    /* ===== BUSCAR MOTO ===== */
     const { data: moto, error: errorMoto } = await supabase
         .from("motos")
         .select("id, placa, nombre, usuario_creador")
@@ -45,6 +47,7 @@ btnPago.onclick = async () => {
         return;
     }
 
+    /* ===== USUARIO ===== */
     const { data: usuario } = await supabase
         .from("usuarios")
         .select("nombre_completo")
@@ -58,6 +61,7 @@ btnPago.onclick = async () => {
 
     const nombreEmpleado = usuario.nombre_completo;
 
+    /* ===== BLOQUEAR MISMA FECHA ===== */
     const { data: pagoExistente } = await supabase
         .from("pagos")
         .select("id")
@@ -70,6 +74,20 @@ btnPago.onclick = async () => {
         return;
     }
 
+    /* ===== BLOQUEAR MISMA CUOTA PARA LA MISMA MOTO ===== */
+    const { data: cuotaExistente } = await supabase
+        .from("pagos")
+        .select("id")
+        .eq("moto_id", moto.id)
+        .eq("cuotas", cuotas)
+        .limit(1);
+
+    if (cuotaExistente && cuotaExistente.length > 0) {
+        mensaje.textContent = `❌ La cuota ${cuotas} ya fue registrada para esta moto`;
+        return;
+    }
+
+    /* ===== CONSECUTIVO ===== */
     const { data: ultimoPago } = await supabase
         .from("pagos")
         .select("consecutivo")
@@ -81,11 +99,13 @@ btnPago.onclick = async () => {
     const consecutivo = ultimoPago?.consecutivo ? ultimoPago.consecutivo + 1 : 1;
     const fechaHoraRecibido = new Date().toISOString();
 
+    /* ===== INSERT ===== */
     const { error } = await supabase.from("pagos").insert([{
         moto_id: moto.id,
         usuario_id: usuarioId,
         usuario_creador: usuarioId,
         monto,
+        cuotas,
         consecutivo,
         fecha_pago: fechaPagoDestino,
         fecha_sin_hora: fechaPagoDestino,
@@ -105,6 +125,7 @@ btnPago.onclick = async () => {
         placa: moto.placa,
         propietario: moto.nombre,
         monto,
+        cuotas,
         empleado: nombreEmpleado,
         caja: `Caja ${consecutivo}`,
         fechaPago: formatearFecha(fechaPagoDestino),
@@ -113,11 +134,12 @@ btnPago.onclick = async () => {
 
     document.getElementById("placa").value = "";
     document.getElementById("monto").value = "";
+    document.getElementById("cuotas").value = 1;
     document.getElementById("fecha").value = "";
     document.getElementById("placa").focus();
 };
 
-/* ===== FACTURA ===== */
+/* ===== FACTURA (NO TOCADA, SOLO CUOTAS AÑADIDAS) ===== */
 function generarFactura(d) {
     imprimirHTML(`
         <div class="factura">
@@ -136,6 +158,7 @@ function generarFactura(d) {
 
             <p><strong>Fecha a la que va el pago:</strong> ${d.fechaPago}</p>
             <p><strong>Fecha y hora recibido:</strong> ${d.fechaHoraRecibido}</p>
+            <p><strong>Cuota:</strong> ${d.cuotas}</p>
             <p><strong>Atendido por:</strong> ${d.empleado}</p>
 
             <div class="linea"></div>
@@ -150,7 +173,7 @@ function generarFactura(d) {
     `);
 }
 
-/* ================= IMPRESIÓN BASE (DIG-E200I) ================= */
+/* ================= IMPRESIÓN BASE ================= */
 function imprimirHTML(html) {
     const v = window.open("", "_blank");
     v.document.write(`
@@ -197,5 +220,3 @@ function formatearFechaHora(fecha) {
         timeStyle: "medium"
     });
 }
-
-

@@ -8,11 +8,13 @@ if (!localStorage.getItem("usuario_id")) {
 const mensaje = document.getElementById("mensaje");
 
 /* ===== MOSTRAR / OCULTAR CODEUDOR ===== */
-const chkCodeudor = document.getElementById("tieneCodeudor");
+const radiosCodeudor = document.querySelectorAll('input[name="codeudor"]');
 const formCodeudor = document.getElementById("formCodeudor");
 
-chkCodeudor.addEventListener("change", () => {
-    formCodeudor.style.display = chkCodeudor.checked ? "block" : "none";
+radiosCodeudor.forEach(radio => {
+    radio.addEventListener("change", () => {
+        formCodeudor.style.display = radio.value === "si" ? "block" : "none";
+    });
 });
 
 /* ===== REGISTRAR MOTO ===== */
@@ -24,6 +26,8 @@ document.getElementById("btnRegistrar").onclick = async () => {
     const cedula = document.getElementById("cedula").value.trim();
     const direccion = document.getElementById("direccion").value.trim();
     const telefono = document.getElementById("telefono").value.trim();
+
+    const tieneCodeudor = document.querySelector('input[name="codeudor"]:checked').value === "si";
 
     mensaje.textContent = "";
     mensaje.style.color = "red";
@@ -65,7 +69,7 @@ document.getElementById("btnRegistrar").onclick = async () => {
     }
 
     /* ===== INSERTAR CODEUDOR (SI EXISTE) ===== */
-    if (chkCodeudor.checked) {
+    if (tieneCodeudor) {
         const codeudorNombre = document.getElementById("codeudorNombre").value.trim();
         const codeudorCedula = document.getElementById("codeudorCedula").value.trim();
         const codeudorDireccion = document.getElementById("codeudorDireccion").value.trim();
@@ -89,8 +93,8 @@ document.getElementById("btnRegistrar").onclick = async () => {
     mensaje.textContent = "✅ Moto registrada correctamente";
 
     document.querySelectorAll("input").forEach(i => {
-        if (i.type !== "checkbox") i.value = "";
-        if (i.type === "checkbox") i.checked = false;
+        if (i.type !== "radio") i.value = "";
+        if (i.type === "radio" && i.value === "no") i.checked = true;
     });
 
     formCodeudor.style.display = "none";

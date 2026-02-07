@@ -48,6 +48,7 @@ btnBuscar.addEventListener("click", async () => {
             empleado_id,
             empleado,
             monto,
+            cuotas,
             fecha_pago,
             created_at
         `)
@@ -62,12 +63,12 @@ btnBuscar.addEventListener("click", async () => {
 
     if (error) {
         console.error(error);
-        tabla.innerHTML = `<tr><td colspan="5">❌ Error al consultar</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="6">❌ Error al consultar</td></tr>`;
         return;
     }
 
     if (!data || data.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="5">No hay pagos registrados</td></tr>`;
+        tabla.innerHTML = `<tr><td colspan="6">No hay pagos registrados</td></tr>`;
         return;
     }
 
@@ -93,12 +94,12 @@ function pintarTablaPagos() {
 
         tr.innerHTML = `
             <td>${fechaSolo(p.fecha_pago)}</td>
+            <td>${p.cuotas}</td>
             <td>${formatoCOP(p.monto)}</td>
             <td>${p.empleado}</td>
             <td style="text-align:center;">
                 <button class="btnImprimir" data-id="${p.pago_id}">🖨️</button>
             </td>
-
             ${
                 rol === "administrador"
                     ? `<td style="text-align:center;">
@@ -136,7 +137,7 @@ function enlazarBotonesImprimir() {
     });
 }
 
-/* ================= VALIDAR CLAVE ADMIN EN SUPABASE ================= */
+/* ================= VALIDAR CLAVE ADMIN ================= */
 async function validarClaveAdmin(clave) {
     const { data, error } = await supabase
         .from("usuarios")
@@ -155,7 +156,7 @@ async function validarClaveAdmin(clave) {
     return data && data.length > 0;
 }
 
-/* ================= ELIMINAR PAGO (SOLO ADMIN) ================= */
+/* ================= ELIMINAR PAGO ================= */
 function enlazarBotonesEliminar() {
     if (rol !== "administrador") return;
 
@@ -163,37 +164,31 @@ function enlazarBotonesEliminar() {
         btn.addEventListener("click", async () => {
             const pagoId = btn.dataset.id;
 
-            const ok = confirm("⚠️ ¿Seguro que deseas eliminar este pago?");
-            if (!ok) return;
+            if (!confirm("⚠️ ¿Seguro que deseas eliminar este pago?")) return;
 
             const clave = prompt("🔑 Ingresa la clave del administrador:");
             if (!clave) return;
 
-            // validar contra tabla usuarios
             const esAdmin = await validarClaveAdmin(clave);
             if (!esAdmin) {
-                alert("❌ Clave incorrecta o no eres administrador");
+                alert("❌ Clave incorrecta");
                 return;
             }
 
-            // eliminar pago
             const { error } = await supabase
                 .from("pagos")
                 .delete()
                 .eq("id", pagoId);
 
             if (error) {
-                console.error(error);
                 alert("❌ Error eliminando el pago");
                 return;
             }
 
             alert("✅ Pago eliminado");
 
-            // quitar del array
             pagosGlobal = pagosGlobal.filter(p => p.pago_id !== pagoId);
 
-            // repintar
             pintarTablaPagos();
             pintarTotal();
             enlazarBotonesImprimir();
@@ -221,6 +216,7 @@ function imprimirPago(p) {
 
             <p><strong>Fecha del pago:</strong> ${fechaSolo(p.fecha_pago)}</p>
             <p><strong>Fecha de registro:</strong> ${fechaHoraCOL(p.created_at)}</p>
+            <p><strong>Cuota:</strong> ${p.cuotas}</p>
             <p><strong>Atendido por:</strong> ${p.empleado}</p>
 
             <div class="linea"></div>
@@ -242,6 +238,7 @@ function imprimirResumen() {
     let filas = pagosGlobal.map(p => `
         <tr>
             <td>${fechaSolo(p.fecha_pago)}</td>
+            <td>Cuota ${p.cuotas}</td>
             <td>${formatoCOP(p.monto)}</td>
         </tr>
     `).join("");
@@ -263,11 +260,12 @@ function imprimirResumen() {
             <table>
                 <tr>
                     <th>Fecha</th>
+                    <th>Cuota</th>
                     <th>Monto</th>
                 </tr>
                 ${filas}
                 <tr>
-                    <td><strong>Total</strong></td>
+                    <td colspan="2"><strong>Total</strong></td>
                     <td><strong>${formatoCOP(total)}</strong></td>
                 </tr>
             </table>
@@ -280,7 +278,7 @@ function imprimirResumen() {
     `);
 }
 
-/* ================= IMPRESIÓN BASE (DIG-E200I REAL) ================= */
+/* ================= IMPRESIÓN BASE ================= */
 function imprimirHTML(html) {
     const v = window.open("", "_blank");
     v.document.write(`
@@ -289,65 +287,16 @@ function imprimirHTML(html) {
             <style>
                 @page { size: 80mm auto; margin: 0; }
                 * { box-sizing: border-box; }
-
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 0;
-                    width: 60mm;
-                }
-
-                .factura {
-                    width: 60mm;
-                    padding: 3mm;
-                }
-
-                h2 {
-                    text-align: center;
-                    margin: 4px 0;
-                    font-size: 14px;
-                }
-
-                .direccion {
-                    text-align: center;
-                    font-size: 10px;
-                    margin-bottom: 6px;
-                }
-
-                p {
-                    margin: 3px 0;
-                    font-size: 11px;
-                    word-break: break-word;
-                }
-
-                .linea {
-                    border-top: 1px dashed #000;
-                    margin: 6px 0;
-                }
-
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 10px;
-                }
-
-                th, td {
-                    padding: 3px;
-                    text-align: center;
-                    word-break: break-word;
-                }
-
-                .valor {
-                    font-size: 15px;
-                    font-weight: bold;
-                    text-align: center;
-                }
-
-                .firma {
-                    margin-top: 18px;
-                    text-align: center;
-                    font-size: 10px;
-                }
+                body { font-family: Arial, sans-serif; margin: 0; padding: 0; width: 60mm; }
+                .factura { width: 60mm; padding: 3mm; }
+                h2 { text-align: center; margin: 4px 0; font-size: 14px; }
+                .direccion { text-align: center; font-size: 10px; margin-bottom: 6px; }
+                p { margin: 3px 0; font-size: 11px; }
+                .linea { border-top: 1px dashed #000; margin: 6px 0; }
+                table { width: 100%; font-size: 10px; border-collapse: collapse; }
+                th, td { padding: 3px; text-align: center; }
+                .valor { font-size: 15px; font-weight: bold; text-align: center; }
+                .firma { margin-top: 18px; text-align: center; font-size: 10px; }
             </style>
         </head>
         <body onload="window.print(); window.close();">

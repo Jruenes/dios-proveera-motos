@@ -14,7 +14,11 @@
 
     <input type="number" id="monto" placeholder="Monto" required>
 
-    <input type="number" id="cuotas" placeholder="Número de cuotas" min="1" value="1" required>
+    <!-- CUOTA AUTOMÁTICA -->
+    <input type="number" id="cuotas" readonly>
+
+    <!-- SOLO PARA MOTOS ADELANTADAS -->
+    <input type="number" id="cuota_inicial" placeholder="Cuota inicial (solo si ya va adelantada)">
 
     <input type="date" id="fecha" required>
 

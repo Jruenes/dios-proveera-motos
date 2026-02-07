@@ -57,16 +57,16 @@ btnPago.onclick = async () => {
 
     const placa = placaInput.value.trim().toUpperCase();
     const total = Number(document.getElementById("monto").value);
-    const fechaPagoDestino = document.getElementById("fecha").value;
+    const fechaPago = document.getElementById("fecha").value;
     const usuarioId = localStorage.getItem("usuario_id");
     const cuotaInicial = Number(cuotaInicialInput.value) || 0;
 
-    if (!placa || !total || !fechaPagoDestino) {
+    if (!placa || !total || !fechaPago) {
         mensaje.textContent = "Complete todos los campos";
         return;
     }
 
-    /* ===== BUSCAR MOTO ===== */
+    /* ===== MOTO ===== */
     const { data: moto } = await supabase
         .from("motos")
         .select("id, placa, nombre, usuario_creador")
@@ -97,39 +97,52 @@ btnPago.onclick = async () => {
 
     const nombreEmpleado = usuario.nombre_completo;
 
-    /* ===== MONTO POR CUOTA ===== */
     const montoPorCuota = cuotaInicial > 0
         ? Math.round(total / cuotaInicial)
         : total;
 
-    /* ===== GENERAR CUOTAS INICIALES HACIA ATRÁS ===== */
+    /* ===== SOLO HISTÓRICO (CUOTA INICIAL) ===== */
     if (cuotaInicial > 0) {
         await generarCuotasIniciales(
             moto.id,
             cuotaInicial,
             montoPorCuota,
-            fechaPagoDestino,
+            fechaPago,
             usuarioId
         );
+
+        mensaje.style.color = "lime";
+        mensaje.textContent = "✅ Cuotas iniciales registradas correctamente";
+        return; // ⛔ AQUÍ SE ACABA TODO
     }
 
-    const cuotaActual = cuotaInicial + 1;
+    /* ===== CUOTA ACTUAL ===== */
+    let cuotaActual = 1;
+    const { data: ultimoPago } = await supabase
+        .from("pagos")
+        .select("cuotas")
+        .eq("moto_id", moto.id)
+        .order("cuotas", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    /* ===== BLOQUEAR FECHA SOLO PARA PAGO ACTUAL ===== */
-    const { data: pagoFecha } = await supabase
+    if (ultimoPago?.cuotas) cuotaActual = ultimoPago.cuotas + 1;
+
+    /* ===== BLOQUEAR FECHA ===== */
+    const { data: existeFecha } = await supabase
         .from("pagos")
         .select("id")
         .eq("moto_id", moto.id)
-        .eq("fecha_pago", fechaPagoDestino)
+        .eq("fecha_pago", fechaPago)
         .limit(1);
 
-    if (pagoFecha.length) {
+    if (existeFecha.length) {
         mensaje.textContent = "❌ Ya existe un pago para esa fecha";
         return;
     }
 
     /* ===== CONSECUTIVO ===== */
-    const { data: ultimoPago } = await supabase
+    const { data: ultimoRecibo } = await supabase
         .from("pagos")
         .select("consecutivo")
         .eq("usuario_creador", usuarioId)
@@ -137,13 +150,13 @@ btnPago.onclick = async () => {
         .limit(1)
         .maybeSingle();
 
-    const consecutivo = ultimoPago?.consecutivo
-        ? ultimoPago.consecutivo + 1
+    const consecutivo = ultimoRecibo?.consecutivo
+        ? ultimoRecibo.consecutivo + 1
         : 1;
 
     const fechaHora = new Date().toISOString();
 
-    /* ===== INSERT PAGO ACTUAL ===== */
+    /* ===== INSERT PAGO NORMAL ===== */
     await supabase.from("pagos").insert([{
         moto_id: moto.id,
         usuario_id: usuarioId,
@@ -151,15 +164,14 @@ btnPago.onclick = async () => {
         monto: montoPorCuota,
         cuotas: cuotaActual,
         consecutivo,
-        fecha_pago: fechaPagoDestino,
-        fecha_sin_hora: fechaPagoDestino,
+        fecha_pago: fechaPago,
+        fecha_sin_hora: fechaPago,
         fecha: fechaHora
     }]);
 
     mensaje.style.color = "lime";
     mensaje.textContent = "✅ Pago registrado correctamente";
 
-    /* ===== FACTURA (INTOCABLE) ===== */
     generarFactura({
         consecutivo,
         placa: moto.placa,
@@ -167,7 +179,7 @@ btnPago.onclick = async () => {
         monto: montoPorCuota,
         cuotas: cuotaActual,
         empleado: nombreEmpleado,
-        fechaPago: formatearFecha(fechaPagoDestino),
+        fechaPago: formatearFecha(fechaPago),
         fechaHoraRecibido: formatearFechaHora(fechaHora)
     });
 
@@ -180,13 +192,12 @@ btnPago.onclick = async () => {
     placaInput.focus();
 };
 
-/* ===== CUOTAS INICIALES DIARIAS HACIA ATRÁS ===== */
+/* ===== CUOTAS INICIALES DESDE FECHA EXACTA ===== */
 async function generarCuotasIniciales(motoId, cantidad, monto, fechaBase, usuarioId) {
     const pagos = [];
     let fecha = new Date(fechaBase);
 
     for (let i = cantidad; i >= 1; i--) {
-        fecha.setDate(fecha.getDate() - 1);
         const fechaISO = fecha.toISOString().split("T")[0];
 
         pagos.push({
@@ -199,12 +210,14 @@ async function generarCuotasIniciales(motoId, cantidad, monto, fechaBase, usuari
             fecha_sin_hora: fechaISO,
             fecha: fecha.toISOString()
         });
+
+        fecha.setDate(fecha.getDate() - 1);
     }
 
     await supabase.from("pagos").insert(pagos);
 }
 
-/* ===== FACTURA (NO TOCADA) ===== */
+/* ===== FACTURA (INTOCABLE) ===== */
 function generarFactura(d) {
     imprimirHTML(`
         <div class="factura">
@@ -232,22 +245,24 @@ function generarFactura(d) {
 function imprimirHTML(html) {
     const v = window.open("", "_blank");
     v.document.write(`
-        <html><head>
-        <style>
-            @page { size: 80mm auto; margin:0 }
-            body { font-family: Arial; width:60mm }
-            .factura { padding:3mm }
-            h2{text-align:center}
-            .direccion{text-align:center;font-size:10px}
-            p{font-size:11px;margin:3px 0}
-            .linea{border-top:1px dashed #000;margin:6px 0}
-            .valor{text-align:center;font-size:15px;font-weight:bold}
-            .firma{text-align:center;margin-top:18px;font-size:10px}
-        </style>
+        <html>
+        <head>
+            <style>
+                @page { size: 80mm auto; margin: 0 }
+                body { font-family: Arial; width: 60mm }
+                .factura { padding: 3mm }
+                h2 { text-align: center }
+                .direccion { text-align: center; font-size: 10px }
+                p { font-size: 11px; margin: 3px 0 }
+                .linea { border-top: 1px dashed #000; margin: 6px 0 }
+                .valor { text-align: center; font-size: 15px; font-weight: bold }
+                .firma { text-align: center; margin-top: 18px; font-size: 10px }
+            </style>
         </head>
         <body onload="window.print();window.close()">
-        ${html}
-        </body></html>
+            ${html}
+        </body>
+        </html>
     `);
     v.document.close();
 }

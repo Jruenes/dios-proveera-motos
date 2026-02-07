@@ -8,10 +8,46 @@ if (!localStorage.getItem("usuario_id")) {
 /* ===== DOM ===== */
 const mensaje = document.getElementById("mensaje");
 const btnPago = document.getElementById("btnPago");
+const placaInput = document.getElementById("placa");
+const cuotasInput = document.getElementById("cuotas");
+const cuotaInicialInput = document.getElementById("cuota_inicial");
 
 /* ===== ENTER ===== */
 document.addEventListener("keydown", e => {
     if (e.key === "Enter") btnPago.click();
+});
+
+/* ===== AUTOCALCULAR CUOTA ===== */
+placaInput.addEventListener("blur", async () => {
+    const placa = placaInput.value.trim().toUpperCase();
+    if (!placa) return;
+
+    cuotasInput.value = "";
+    cuotaInicialInput.value = "";
+    cuotaInicialInput.disabled = true;
+
+    const { data: moto } = await supabase
+        .from("motos")
+        .select("id")
+        .eq("placa", placa)
+        .single();
+
+    if (!moto) return;
+
+    const { data: ultimoPago } = await supabase
+        .from("pagos")
+        .select("cuotas")
+        .eq("moto_id", moto.id)
+        .order("cuotas", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (ultimoPago?.cuotas) {
+        cuotasInput.value = ultimoPago.cuotas + 1;
+        cuotaInicialInput.disabled = true;
+    } else {
+        cuotaInicialInput.disabled = false;
+    }
 });
 
 /* ===== REGISTRAR PAGO ===== */
@@ -19,25 +55,25 @@ btnPago.onclick = async () => {
     mensaje.textContent = "";
     mensaje.style.color = "red";
 
-    const placa = document.getElementById("placa").value.trim().toUpperCase();
-    const monto = Number(document.getElementById("monto").value);
-    const cuotas = Number(document.getElementById("cuotas").value);
+    const placa = placaInput.value.trim().toUpperCase();
+    const total = Number(document.getElementById("monto").value);
     const fechaPagoDestino = document.getElementById("fecha").value;
     const usuarioId = localStorage.getItem("usuario_id");
+    const cuotaInicial = Number(cuotaInicialInput.value) || 0;
 
-    if (!placa || !monto || !fechaPagoDestino || !cuotas || cuotas < 1) {
-        mensaje.textContent = "Complete todos los campos correctamente";
+    if (!placa || !total || !fechaPagoDestino) {
+        mensaje.textContent = "Complete todos los campos";
         return;
     }
 
     /* ===== BUSCAR MOTO ===== */
-    const { data: moto, error: errorMoto } = await supabase
+    const { data: moto } = await supabase
         .from("motos")
         .select("id, placa, nombre, usuario_creador")
         .eq("placa", placa)
         .single();
 
-    if (errorMoto || !moto) {
+    if (!moto) {
         mensaje.textContent = "Moto no encontrada";
         return;
     }
@@ -54,36 +90,41 @@ btnPago.onclick = async () => {
         .eq("id", usuarioId)
         .single();
 
-    if (!usuario || !usuario.nombre_completo) {
-        mensaje.textContent = "❌ El usuario no tiene nombre asignado";
+    if (!usuario?.nombre_completo) {
+        mensaje.textContent = "Usuario sin nombre";
         return;
     }
 
     const nombreEmpleado = usuario.nombre_completo;
 
-    /* ===== BLOQUEAR MISMA FECHA ===== */
-    const { data: pagoExistente } = await supabase
+    /* ===== MONTO POR CUOTA ===== */
+    const montoPorCuota = cuotaInicial > 0
+        ? Math.round(total / cuotaInicial)
+        : total;
+
+    /* ===== GENERAR CUOTAS INICIALES HACIA ATRÁS ===== */
+    if (cuotaInicial > 0) {
+        await generarCuotasIniciales(
+            moto.id,
+            cuotaInicial,
+            montoPorCuota,
+            fechaPagoDestino,
+            usuarioId
+        );
+    }
+
+    const cuotaActual = cuotaInicial + 1;
+
+    /* ===== BLOQUEAR FECHA SOLO PARA PAGO ACTUAL ===== */
+    const { data: pagoFecha } = await supabase
         .from("pagos")
         .select("id")
         .eq("moto_id", moto.id)
         .eq("fecha_pago", fechaPagoDestino)
         .limit(1);
 
-    if (pagoExistente && pagoExistente.length > 0) {
+    if (pagoFecha.length) {
         mensaje.textContent = "❌ Ya existe un pago para esa fecha";
-        return;
-    }
-
-    /* ===== BLOQUEAR MISMA CUOTA PARA LA MISMA MOTO ===== */
-    const { data: cuotaExistente } = await supabase
-        .from("pagos")
-        .select("id")
-        .eq("moto_id", moto.id)
-        .eq("cuotas", cuotas)
-        .limit(1);
-
-    if (cuotaExistente && cuotaExistente.length > 0) {
-        mensaje.textContent = `❌ La cuota ${cuotas} ya fue registrada para esta moto`;
         return;
     }
 
@@ -96,125 +137,134 @@ btnPago.onclick = async () => {
         .limit(1)
         .maybeSingle();
 
-    const consecutivo = ultimoPago?.consecutivo ? ultimoPago.consecutivo + 1 : 1;
-    const fechaHoraRecibido = new Date().toISOString();
+    const consecutivo = ultimoPago?.consecutivo
+        ? ultimoPago.consecutivo + 1
+        : 1;
 
-    /* ===== INSERT ===== */
-    const { error } = await supabase.from("pagos").insert([{
+    const fechaHora = new Date().toISOString();
+
+    /* ===== INSERT PAGO ACTUAL ===== */
+    await supabase.from("pagos").insert([{
         moto_id: moto.id,
         usuario_id: usuarioId,
         usuario_creador: usuarioId,
-        monto,
-        cuotas,
+        monto: montoPorCuota,
+        cuotas: cuotaActual,
         consecutivo,
         fecha_pago: fechaPagoDestino,
         fecha_sin_hora: fechaPagoDestino,
-        fecha: fechaHoraRecibido
+        fecha: fechaHora
     }]);
-
-    if (error) {
-        mensaje.textContent = "❌ Error al registrar el pago";
-        return;
-    }
 
     mensaje.style.color = "lime";
     mensaje.textContent = "✅ Pago registrado correctamente";
 
+    /* ===== FACTURA (INTOCABLE) ===== */
     generarFactura({
         consecutivo,
         placa: moto.placa,
         propietario: moto.nombre,
-        monto,
-        cuotas,
+        monto: montoPorCuota,
+        cuotas: cuotaActual,
         empleado: nombreEmpleado,
-        caja: `Caja ${consecutivo}`,
         fechaPago: formatearFecha(fechaPagoDestino),
-        fechaHoraRecibido: formatearFechaHora(fechaHoraRecibido)
+        fechaHoraRecibido: formatearFechaHora(fechaHora)
     });
 
-    document.getElementById("placa").value = "";
+    placaInput.value = "";
     document.getElementById("monto").value = "";
-    document.getElementById("cuotas").value = 1;
+    cuotasInput.value = "";
+    cuotaInicialInput.value = "";
+    cuotaInicialInput.disabled = false;
     document.getElementById("fecha").value = "";
-    document.getElementById("placa").focus();
+    placaInput.focus();
 };
 
-/* ===== FACTURA (NO TOCADA, SOLO CUOTAS AÑADIDAS) ===== */
+/* ===== CUOTAS INICIALES DIARIAS HACIA ATRÁS ===== */
+async function generarCuotasIniciales(motoId, cantidad, monto, fechaBase, usuarioId) {
+    const pagos = [];
+    let fecha = new Date(fechaBase);
+
+    for (let i = cantidad; i >= 1; i--) {
+        fecha.setDate(fecha.getDate() - 1);
+        const fechaISO = fecha.toISOString().split("T")[0];
+
+        pagos.push({
+            moto_id: motoId,
+            usuario_id: usuarioId,
+            usuario_creador: usuarioId,
+            monto,
+            cuotas: i,
+            fecha_pago: fechaISO,
+            fecha_sin_hora: fechaISO,
+            fecha: fecha.toISOString()
+        });
+    }
+
+    await supabase.from("pagos").insert(pagos);
+}
+
+/* ===== FACTURA (NO TOCADA) ===== */
 function generarFactura(d) {
     imprimirHTML(`
         <div class="factura">
             <h2>Dios Proveerá Moto</h2>
-
             <div class="direccion">
                 Barrio La Gloria II - Calle Los Amigos Cra 63A#13D-46<br>
                 Cartagena de Indias
             </div>
-
-            <p><strong>No. Recibo:</strong> ${String(d.consecutivo).padStart(3, "0")}</p>
+            <p><strong>No. Recibo:</strong> ${String(d.consecutivo).padStart(3,"0")}</p>
             <p><strong>Placa:</strong> ${d.placa}</p>
             <p><strong>Propietario:</strong> ${d.propietario}</p>
-
             <div class="linea"></div>
-
             <p><strong>Fecha a la que va el pago:</strong> ${d.fechaPago}</p>
             <p><strong>Fecha y hora recibido:</strong> ${d.fechaHoraRecibido}</p>
             <p><strong>Cuota:</strong> ${d.cuotas}</p>
             <p><strong>Atendido por:</strong> ${d.empleado}</p>
-
             <div class="linea"></div>
-
             <p class="valor">${formatoCOP(d.monto)}</p>
-
-            <div class="firma">
-                ____________________________<br>
-                Firma
-            </div>
+            <div class="firma">____________________________<br>Firma</div>
         </div>
     `);
 }
 
-/* ================= IMPRESIÓN BASE ================= */
+/* ===== IMPRESIÓN ===== */
 function imprimirHTML(html) {
     const v = window.open("", "_blank");
     v.document.write(`
-        <html>
-        <head>
-            <style>
-                @page { size: 80mm auto; margin: 0; }
-                * { box-sizing: border-box; }
-                body { font-family: Arial, sans-serif; margin: 0; padding: 0; width: 60mm; }
-                .factura { width: 60mm; padding: 3mm; }
-                h2 { text-align: center; margin: 4px 0; font-size: 14px; }
-                .direccion { text-align: center; font-size: 10px; margin-bottom: 6px; }
-                p { margin: 3px 0; font-size: 11px; word-break: break-word; }
-                .linea { border-top: 1px dashed #000; margin: 6px 0; }
-                .valor { font-size: 15px; font-weight: bold; text-align: center; }
-                .firma { margin-top: 18px; text-align: center; font-size: 10px; }
-            </style>
+        <html><head>
+        <style>
+            @page { size: 80mm auto; margin:0 }
+            body { font-family: Arial; width:60mm }
+            .factura { padding:3mm }
+            h2{text-align:center}
+            .direccion{text-align:center;font-size:10px}
+            p{font-size:11px;margin:3px 0}
+            .linea{border-top:1px dashed #000;margin:6px 0}
+            .valor{text-align:center;font-size:15px;font-weight:bold}
+            .firma{text-align:center;margin-top:18px;font-size:10px}
+        </style>
         </head>
-        <body onload="window.print(); window.close();">
-            ${html}
-        </body>
-        </html>
+        <body onload="window.print();window.close()">
+        ${html}
+        </body></html>
     `);
     v.document.close();
 }
 
 /* ===== UTILIDADES ===== */
-function formatoCOP(valor) {
-    return Number(valor).toLocaleString("es-CO", {
+function formatoCOP(v) {
+    return Number(v).toLocaleString("es-CO", {
         style: "currency",
         currency: "COP",
         minimumFractionDigits: 0
     });
 }
-
-function formatearFecha(fecha) {
-    return new Date(fecha + "T00:00:00").toLocaleDateString("es-CO");
+function formatearFecha(f) {
+    return new Date(f + "T00:00:00").toLocaleDateString("es-CO");
 }
-
-function formatearFechaHora(fecha) {
-    return new Date(fecha).toLocaleString("es-CO", {
+function formatearFechaHora(f) {
+    return new Date(f).toLocaleString("es-CO", {
         timeZone: "America/Bogota",
         dateStyle: "short",
         timeStyle: "medium"
